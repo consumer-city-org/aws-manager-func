@@ -38,6 +38,12 @@
         "Policies": [
           "AWSLambdaBasicExecutionRole"
         ],
+        "Environment":{  
+            "Variables":{  
+                "DynamoUsername": "arn:aws:ssm:sa-east-1:223445100142:parameter/DynamoUsername",
+                "DynamoPassword": "arn:aws:ssm:sa-east-1:223445100142:parameter/DynamoPassword"
+            }
+        },
         "Events": {
           "RootGet": {
             "Type": "Api",
