@@ -19,6 +19,7 @@ namespace ConsumerCity.AwsManager.Func
         /// </summary>
         public Functions()
         {
+            DotNetEnv.Env.Load();
         }
 
 
@@ -31,10 +32,11 @@ namespace ConsumerCity.AwsManager.Func
         {
             context.Logger.LogLine("Get Request\n");
 
+
             var response = new APIGatewayProxyResponse
             {
                 StatusCode = (int)HttpStatusCode.OK,
-                Body = "This is my first function",
+                Body = $"Env - [{Environment.GetEnvironmentVariable("DynamoUsername")}]",
                 Headers = new Dictionary<string, string> { { "Content-Type", "text/plain" } }
             };
 
