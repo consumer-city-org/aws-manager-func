@@ -10,6 +10,7 @@ using Amazon.Runtime;
 using Amazon.DynamoDBv2;
 using Amazon;
 using Amazon.DynamoDBv2.DataModel;
+using Amazon.Lambda;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
@@ -18,12 +19,31 @@ namespace ConsumerCity.AwsManager.Func
 {
     public class Functions
     {
+
+        private DynamoDBContext DbContext { get; set; }
+        private AmazonLambdaClient LambdaClient { get; set; }
+
         /// <summary>
         /// Default constructor that Lambda will invoke.
         /// </summary>
         public Functions()
         {
             DotNetEnv.Env.Load();
+
+            var awsCredentials = new BasicAWSCredentials(Environment.GetEnvironmentVariable("DynamoUsername"), Environment.GetEnvironmentVariable("DynamoPassword"));
+
+            DbContext = new DynamoDBContext(
+                new AmazonDynamoDBClient(
+                    awsCredentials, 
+                    new AmazonDynamoDBConfig() {
+                        RegionEndpoint = RegionEndpoint.SAEast1
+                    }
+                )
+            );
+
+            AmazonLambdaConfig lambdaConfig = new AmazonLambdaConfig() { RegionEndpoint = RegionEndpoint.SAEast1 };
+
+            LambdaClient = new AmazonLambdaClient(awsCredentials, lambdaConfig);
         }
 
 
@@ -55,19 +75,13 @@ namespace ConsumerCity.AwsManager.Func
         public async Task<APIGatewayProxyResponse> MySecondFunc(APIGatewayProxyRequest request, ILambdaContext context)
         {
             try {
-                var credentials = new BasicAWSCredentials(Environment.GetEnvironmentVariable("DynamoUsername"), Environment.GetEnvironmentVariable("DynamoPassword"));
-                var config = new AmazonDynamoDBConfig() {
-                    RegionEndpoint = RegionEndpoint.SAEast1
-                };
-                var client = new AmazonDynamoDBClient(credentials, config);
-
-                var dbContext = new DynamoDBContext(client);
+                
 
                 //var result = await context.LoadAsync<Person>("1");
 
                 //await context.SaveAsync(new Person() { Id = "1", Name = "Pedro"});
 
-                var result = await dbContext.ScanAsync<Person>(new List<ScanCondition>()).GetRemainingAsync();
+                var result = await DbContext.ScanAsync<Person>(new List<ScanCondition>()).GetRemainingAsync();
 
                 return new APIGatewayProxyResponse {
                     StatusCode = (int)HttpStatusCode.OK,
@@ -101,6 +115,23 @@ namespace ConsumerCity.AwsManager.Func
         {
             public string Name { get; set; }
             public string Value { get; set; }
+        }
+
+        public async Task<APIGatewayProxyResponse> AwsStatus(APIGatewayProxyRequest request, ILambdaContext context)
+        {
+            context.Logger.LogLine("Get Request\n");
+            var res = await LambdaClient.ListFunctionsAsync();
+
+            var funcs = res.Functions;
+
+
+            var response = new APIGatewayProxyResponse {
+                StatusCode = (int)HttpStatusCode.OK,
+                Body = $"AWS status",
+                Headers = new Dictionary<string, string> { { "Content-Type", "text/plain" } }
+            };
+
+            return response;
         }
     }
 }

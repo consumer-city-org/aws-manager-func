@@ -54,6 +54,29 @@
           }
         }
       }
+    },
+    "AwsStatus": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "Handler": "ConsumerCity.AwsManager.Func::ConsumerCity.AwsManager.Func.Functions::AwsStatus",
+        "Runtime": "dotnetcore3.1",
+        "CodeUri": "",
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Role": null,
+        "Policies": [
+          "AWSLambdaBasicExecutionRole"
+        ],
+        "Events": {
+          "RootGet": {
+            "Type": "Api",
+            "Properties": {
+              "Path": "/aws",
+              "Method": "GET"
+            }
+          }
+        }
+      }
     }
   },
   "Outputs": {
